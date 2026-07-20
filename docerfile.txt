@@ -1,0 +1,30 @@
+FROM python:3.12-slim
+
+# Встановлюємо системні залежності:
+# fonts-dejavu — Unicode-шрифт для PDF з кирилицею
+# gcc — потрібен для компіляції деяких Python-залежностей
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fonts-dejavu \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Копіюємо залежності першими — Docker кешує цей шар,
+# тому при зміні лише коду бота pip install не перезапускається
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копіюємо код
+COPY bot.py strings.py ./
+
+# Директорії для даних (монтуються як volume, щоб дані зберігались між перезапусками)
+RUN mkdir -p /app/data /app/backups
+
+# DB_PATH вказує в /app/data/ — ця директорія монтується як volume
+ENV DB_PATH=/app/data/db.sqlite3
+
+# Бот не потребує відкритих портів (polling, не webhook)
+# Якщо додаєш webhook — розкоментуй: EXPOSE 8080
+
+CMD ["python", "bot.py"]
