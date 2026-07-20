@@ -1,0 +1,34 @@
+services:
+  promohub:
+    build: .
+    container_name: promohub_bot
+    restart: unless-stopped       # автоперезапуск при збої, але не при ручному зупиненні
+
+    env_file:
+      - .env                      # всі секрети тільки тут, не в compose-файлі
+
+    volumes:
+      - ./data:/app/data          # БД зберігається на хості між перезапусками
+      - ./backups:/app/backups    # бекапи також на хості
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"           # максимум 10 МБ на файл логів
+        max-file: "3"             # зберігаємо 3 останніх файли
+
+    # Обмеження ресурсів — щоб бот не з'їв весь сервер при аномалії
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+    healthcheck:
+      # Перевіряємо, що процес Python живий
+      # Для повноцінного healthcheck можна додати /health endpoint через webhook
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
