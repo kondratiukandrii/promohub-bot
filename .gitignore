@@ -1,0 +1,9 @@
+.env
+*.pyc
+__pycache__/
+db.sqlite3
+pay.png
+qr_*.png
+*.pdf
+.venv/
+venv/
